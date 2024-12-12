@@ -1,77 +1,67 @@
 package com.example.k_realtime.ui.main
 
 import android.os.Bundle
+import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Spinner
-import android.widget.TextView
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.example.k_realtime.R
-import com.example.k_realtime.data.repository.CurrencyRepository
-import com.example.k_realtime.network.ApiService
-import com.example.k_realtime.ui.converter.ConverterViewModel
-import com.example.k_realtime.ui.converter.ConverterViewModelFactory
+import com.example.k_realtime.databinding.ActivityAppBinding
+import com.example.k_realtime.network.RetrofitInstance
 import com.example.k_realtime.util.Constants
-import okhttp3.OkHttpClient
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppActivity : AppCompatActivity() {
 
-    private lateinit var spinnerBaseCurrency: Spinner
-    private lateinit var spinnerTargetCurrency: Spinner
-    private lateinit var etAmount: EditText
-    private lateinit var btnConvert: Button
-    private lateinit var tvResult: TextView
-
-    private val apiService: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL)
-            .client(OkHttpClient())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
-
-    private val repository by lazy { CurrencyRepository(apiService) }
-    private val viewModel: ConverterViewModel by viewModels { ConverterViewModelFactory(repository) }
+    private lateinit var binding: ActivityAppBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_app)
+        binding = ActivityAppBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        spinnerBaseCurrency = findViewById(R.id.spinnerBaseCurrency)
-        spinnerTargetCurrency = findViewById(R.id.spinnerTargetCurrency)
-        etAmount = findViewById(R.id.etAmount)
-        btnConvert = findViewById(R.id.btnConvert)
-        tvResult = findViewById(R.id.tvResult)
+        setupUI()
+    }
 
+    private fun setupUI() {
         val currencies = arrayOf("ZAR", "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "INR")
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currencies)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
-        spinnerBaseCurrency.adapter = adapter
-        spinnerTargetCurrency.adapter = adapter
+        binding.spinnerBaseCurrency.adapter = adapter
+        binding.spinnerTargetCurrency.adapter = adapter
 
-        btnConvert.setOnClickListener {
-            val baseCurrency = spinnerBaseCurrency.selectedItem.toString().trim()
-            val targetCurrency = spinnerTargetCurrency.selectedItem.toString().trim()
-            val amount = etAmount.text.toString().trim()
+        binding.btnConvert.setOnClickListener {
+            val baseCurrency = binding.spinnerBaseCurrency.selectedItem.toString().trim()
+            val targetCurrency = binding.spinnerTargetCurrency.selectedItem.toString().trim()
+            val amount = binding.etAmount.text.toString().trim()
 
             if (baseCurrency.isNotEmpty() && targetCurrency.isNotEmpty() && amount.isNotEmpty()) {
-                viewModel.convertCurrency(Constants.API_KEY, baseCurrency, targetCurrency, amount)
+                hideKeyboard()
+                convertCurrency(baseCurrency, targetCurrency, amount)
             } else {
-                tvResult.text = "Please fill in all fields"
+                binding.tvResult.text = "Please fill in all fields"
             }
         }
+    }
 
-        lifecycleScope.launchWhenStarted {
-            viewModel.conversionResult.collect { result ->
-                tvResult.text = result
+    private fun hideKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
+    }
+
+    private fun convertCurrency(baseCurrency: String, targetCurrency: String, amount: String) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.apiService.convertCurrency(Constants.API_KEY, baseCurrency, targetCurrency, amount)
+                }
+                val targetRate = response.rates[targetCurrency]?.get("rate_for_amount") ?: "N/A"
+                binding.tvResult.text = "$targetRate $targetCurrency"
+            } catch (e: Exception) {
+                binding.tvResult.text = "Conversion failed: ${e.message}"
             }
         }
     }

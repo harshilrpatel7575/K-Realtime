@@ -12,6 +12,7 @@
         android:fontFamily="@font/archivo_black"
         android:text="K-Realtime"
         android:textSize="55dp"
+        android:textColor="@color/secondaryColor2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.411"
@@ -23,7 +24,7 @@
         android:id="@+id/NextPage"
         android:layout_width="247dp"
         android:layout_height="69dp"
-        android:backgroundTint="@color/Azure"
+        android:backgroundTint="@color/primaryColor"
         android:text="Start Calculating"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -42,5 +43,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/display" />
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
