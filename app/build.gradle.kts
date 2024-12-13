@@ -40,6 +40,8 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.ktx)
     dependencies {
         implementation("androidx.core:core-ktx:1.13.1")
         implementation("androidx.appcompat:appcompat:1.7.0")

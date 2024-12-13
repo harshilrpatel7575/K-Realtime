@@ -1,8 +1,12 @@
 package com.example.k_realtime.ui.main
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.k_realtime.databinding.ActivityAppBinding
@@ -45,6 +49,9 @@ class AppActivity : AppCompatActivity() {
                 binding.tvResult.text = "Please fill in all fields"
             }
         }
+        binding.btnCopy.setOnClickListener {
+            copyToClipboard(binding.tvResult.text.toString())
+        }
     }
 
     private fun hideKeyboard() {
@@ -63,6 +70,17 @@ class AppActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 binding.tvResult.text = "Conversion failed: ${e.message}"
             }
+        }
+    }
+
+    private fun copyToClipboard(text: String) {
+        if (text.isNotEmpty()) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Converted Result", text)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Nothing to copy", Toast.LENGTH_SHORT).show()
         }
     }
 }
